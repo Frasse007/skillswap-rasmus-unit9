@@ -10,6 +10,7 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
+    "jest": "^30.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
