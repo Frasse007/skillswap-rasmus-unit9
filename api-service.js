@@ -1,6 +1,6 @@
 const API_BASE_URL = 'http://localhost:3000/api';
 
-async function fetchSkills() {
+export async function fetchSkills() {
   try {
      const response = await fetch(`${API_BASE_URL}/skills`);
      if (!response.ok) {
@@ -14,7 +14,7 @@ async function fetchSkills() {
   }
 }
 
-async function createSkill(skillData) {
+export async function createSkill(skillData) {
   try {
     const response = await fetch(`${API_BASE_URL}/skills`, {
       method: 'POST',
