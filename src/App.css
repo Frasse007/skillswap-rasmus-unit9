@@ -64,6 +64,16 @@ body {
   width: 100%;
 }
 
+/* Footer Styling */
+.site-footer {
+  background-color: #1e293b;
+  color: #94a3b8;
+  text-align: center;
+  padding: 1.5rem;
+  margin-top: auto;
+  font-size: 0.9rem;
+}
+
 /* Hero Section Styling */
 .hero-section {
   text-align: center;
