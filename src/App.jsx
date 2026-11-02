@@ -1,17 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchSkills, createSkill } from '../api-service';
 import { filterSkillsByCategory, calculateTotalCost, matchSkillsToUser } from '../skillswap-functions';
 import './App.css';
 
 // Body content created in collaboration with AI chatbots
 function App() {
-  const [skills, setSkills] = useState([
-    { id: 1, title: 'React & Frontend Development', category: 'Programming', description: 'Master component-driven development, hooks, and modern state management.', price: 25, provider: 'Alex Johnson', expanded: false },
-    { id: 2, title: 'Python & Data Analysis', category: 'Programming', description: 'Learn pandas, numpy, and basic machine learning concepts from scratch.', price: 30, provider: 'Samantha Smith', expanded: false },
-    { id: 3, title: 'Advanced Spanish Conversation', category: 'Language', description: 'Improve fluency through real-world dialogues and grammar practice.', price: 20, provider: 'Carlos Mendez', expanded: false },
-    { id: 4, title: 'Calculus & Linear Algebra', category: 'Math', description: 'Break down complex math proofs, derivatives, and matrix operations.', price: 35, provider: 'Dr. Emily Chen', expanded: false },
-    { id: 5, title: 'Guitar Lessons', category: 'Music', description: 'Learn chords, strumming, and your favorite songs.', price: 15, provider: 'Mark Taylor', expanded: false },
-    { id: 6, title: 'Resume Review', category: 'Career', description: 'Get professional feedback on your resume and cover letter.', price: 0, provider: 'Sarah Jenkins', expanded: false }
-  ]);
+  const [skills, setSkills] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [formData, setFormData] = useState({
+    title: '',
+    category: '',
+    price: '',
+    description: '',
+    provider: 'Anonymous' // Default value
+  });
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
+
+  // Load skills from the backend API on mount
+  const loadSkills = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchSkills();
+      // Ensure prices are numbers and cards start unexpanded
+      const formattedData = data.map(skill => ({
+        ...skill,
+        price: Number(skill.price) || 0,
+        expanded: false
+      }));
+      setSkills(formattedData);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load skills from server. Please ensure the backend server is running.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    loadSkills();
+  }, []);
+
+  // Handle Form Input Changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handle Form Submission
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+
+    // Validation
+    if (!formData.title || !formData.category || formData.price === '' || !formData.description) {
+      setFormError('Please fill out all required fields.');
+      return;
+    }
+
+    try {
+      const skillPayload = {
+        title: formData.title.trim(),
+        category: formData.category.trim(),
+        price: parseFloat(formData.price),
+        description: formData.description.trim(),
+        provider: formData.provider.trim() || 'Anonymous'
+      };
+
+      await createSkill(skillPayload);
+      setFormSuccess('Skill created successfully!');
+      
+      // Reset form
+      setFormData({
+        title: '',
+        category: '',
+        price: '',
+        description: '',
+        provider: 'Anonymous'
+      });
+
+      // Reload skills from backend to display the newly created skill
+      await loadSkills();
+    } catch (err) {
+      setFormError('Failed to create skill. Please try again.');
+    }
+  };
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const filteredSkills = filterSkillsByCategory(skills, selectedCategory);
@@ -119,6 +194,58 @@ function App() {
               ))
             )}
           </div>
+        </section>
+
+        {/* Add Skill Form Section */}
+        <section id="add-skill" className="add-skill-section" style={{ marginTop: '40px', background: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+          <h2>Offer a New Skill</h2>
+          <p className="section-subtitle">Fill out the form below to add your skill to the database.</p>
+          <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '15px' }}>
+            <input
+              type="text"
+              name="title"
+              placeholder="Skill Title (e.g. Python Tutoring)"
+              value={formData.title}
+              onChange={handleInputChange}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+            <input
+              type="text"
+              name="category"
+              placeholder="Category (e.g. Programming)"
+              value={formData.category}
+              onChange={handleInputChange}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+            <input
+              type="number"
+              name="price"
+              placeholder="Hourly Price ($)"
+              value={formData.price}
+              onChange={handleInputChange}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+            <input
+              type="text"
+              name="provider"
+              placeholder="Your Name / Provider"
+              value={formData.provider}
+              onChange={handleInputChange}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+            <textarea
+              name="description"
+              placeholder="Description"
+              value={formData.description}
+              onChange={handleInputChange}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', minHeight: '80px' }}
+            />
+            <button type="submit" className="btn-primary" style={{ padding: '10px', cursor: 'pointer' }}>
+              Create Skill
+            </button>
+            {formError && <p style={{ color: '#dc3545', fontWeight: 'bold' }}>{formError}</p>}
+            {formSuccess && <p style={{ color: '#28a745', fontWeight: 'bold' }}>{formSuccess}</p>}
+          </form>
         </section>
 
         {/* Cost Calculator Section */}
